@@ -7,11 +7,29 @@ import argparse
 import xml.etree.ElementTree as ElementTree
 import io
 
-parser = argparse.ArgumentParser(prog='gen-sprite', description="""Generate sprites from extracted emojis.""")
-parser.add_argument('-e', '--emojis', help='folder where emojis are stored', default='output/', required=False)
-parser.add_argument('-i', '--xml', help='XML containing emojis map', default='emoji-categories.xml', required=False)
-parser.add_argument('-s', '--size', help='Maximum number of emojis per line', default='15', required=False)
-parser.add_argument('-r', '--resize', help='Maximum width for sprites', default='1530', required=False)
+parser = argparse.ArgumentParser(
+    prog='gen-sprite',
+    description="""Generate sprites from extracted emojis.""")
+parser.add_argument(
+    '-e', '--emojis',
+    help='folder where emojis are stored',
+    default='output/',
+    required=False)
+parser.add_argument(
+    '-i', '--xml',
+    help='XML containing emojis map',
+    default='emoji-categories.xml',
+    required=False)
+parser.add_argument(
+    '-s', '--size',
+    help='Maximum number of emojis per line',
+    default='15',
+    required=False)
+parser.add_argument(
+    '-r', '--resize',
+    help='Maximum width for sprites',
+    default='1530',
+    required=False)
 args = parser.parse_args()
 
 xml = ElementTree.parse(args.xml).getroot()
@@ -40,10 +58,9 @@ for group in xml:
     images = [Image.open(filename) for filename in emojis]
     output.close()
 
-
     if len(images) > 0:
         print "Generating sprite for " + groupName
-        masterWidth  = (128 * int(args.size))
+        masterWidth = (128 * int(args.size))
         lines = float(len(images)) / float(args.size)
         if not lines.is_integer():
             lines += 1
@@ -52,7 +69,7 @@ for group in xml:
         master = Image.new(
             mode='RGBA',
             size=(masterWidth, masterHeight),
-            color=(0,0,0,0)
+            color=(0, 0, 0, 0)
         )
 
         offset = -1

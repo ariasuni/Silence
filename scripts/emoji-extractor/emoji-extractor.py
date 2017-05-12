@@ -8,9 +8,18 @@ import xml.etree.ElementTree as ElementTree
 import binascii
 import glob
 
-parser = argparse.ArgumentParser(prog='emoji-extractor', description="""Extract emojis from NotoColorEmoji.ttf. Requires FontTools.""")
-parser.add_argument('-i', '--input', help='the TTF file to parse', default='NotoColorEmoji.ttf', required=False)
-parser.add_argument('-o', '--output', help='the png output folder', default='output/', required=False)
+parser = argparse.ArgumentParser(
+    prog='emoji-extractor',
+    description="""Extract emojis from NotoColorEmoji.ttf. Requires FontTools.""")
+parser.add_argument(
+    '-i', '--input',
+    help='the TTF file to parse',
+    default='NotoColorEmoji.ttf',
+    required=False)
+parser.add_argument(
+    '-o', '--output',
+    help='the png output folder',
+    default='output/', required=False)
 args = parser.parse_args()
 
 try:
@@ -40,9 +49,12 @@ for element in ttx.find('CBDT').find('strikedata'):
 
 for ligatureSetXml in ttx.find('GSUB').find('LookupList').find('Lookup').find('LigatureSubst'):
     ligatureSet = ligatureSetXml.attrib['glyph'].lower().replace('uni', 'u')
-    if ligatureSet.startswith('u'): #TODO: parse missing emojis
+    if ligatureSet.startswith('u'):  # TODO: parse missing emojis
         for ligatureXml in ligatureSetXml:
-            component = ligatureXml.attrib['components'].replace(',', '_').lower().replace('uni', 'u')
+            component = ligatureXml.attrib['components']\
+                .replace(',', '_')\
+                .lower()\
+                .replace('uni', 'u')
             glyph = ligatureXml.attrib['glyph']
             print 'Renaming emoji_' + glyph + '.png to emoji_' + ligatureSet + '_' + component + '.png'
             try:

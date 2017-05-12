@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 import os
 import shutil
@@ -40,7 +40,7 @@ for element in ttx.find('CBDT').find('strikedata'):
     name = element.attrib['name'].lower()
     name = name.replace('uni', 'u')
     imagePath = os.path.abspath(args.output + 'emoji_' + name + '.png')
-    print 'Extracting emoji_' + name + '.png'
+    print('Extracting emoji_' + name + '.png')
     emoji = open(imagePath, "wb")
     for char in data:
             hexChar = binascii.unhexlify(char)
@@ -56,11 +56,11 @@ for ligatureSetXml in ttx.find('GSUB').find('LookupList').find('Lookup').find('L
                 .lower()\
                 .replace('uni', 'u')
             glyph = ligatureXml.attrib['glyph']
-            print 'Renaming emoji_' + glyph + '.png to emoji_' + ligatureSet + '_' + component + '.png'
+            print('Renaming emoji_' + glyph + '.png to emoji_' + ligatureSet + '_' + component + '.png')
             try:
                 os.rename(args.output + '/emoji_' + glyph + '.png', args.output + '/emoji_' + ligatureSet + '_' + component + '.png')
             except:
-                print '!! Cannot rename emoji_' + glyph + '.png'
+                print('!! Cannot rename emoji_' + glyph + '.png')
     else:
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
@@ -73,16 +73,16 @@ for ligatureSetXml in ttx.find('GSUB').find('LookupList').find('Lookup').find('L
                 try:
                     os.rename(args.output + '/emoji_' + ligatureSet + '.png', args.output + '/emoji_u' + code + '.png')
                 except:
-                    print '!! Cannot rename emoji_' + ligatureSet + '.png'
+                    print('!! Cannot rename emoji_' + ligatureSet + '.png')
         else:
             if code == '':
-                print 'Ignoring ' + ligatureSet + '...'
+                print('Ignoring ' + ligatureSet + '...')
 
 emojis = glob.glob(args.output + './*.png')
 for emoji in emojis:
     if not emoji.startswith(args.output + './emoji_u'):
         emoji = emoji.replace(args.output + './emoji_', '').replace('.png', '')
-        print 'Fixing ' + emoji + '...'
+        print('Fixing ' + emoji + '...')
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
         for mapElement in cmap:
@@ -94,7 +94,7 @@ for emoji in emojis:
                 try:
                     os.rename(args.output + '/emoji_' + emoji + '.png', args.output + '/emoji_u' + code + '.png')
                 except:
-                    print '!! Cannot fix emoji_' + emoji + '.png'
+                    print('!! Cannot fix emoji_' + emoji + '.png')
 
 # Some flags aren't correctly sorted
 os.rename(args.output + '/emoji_ufe4e5.png', args.output + '/emoji_u1f1ef_u1f1f5.png')

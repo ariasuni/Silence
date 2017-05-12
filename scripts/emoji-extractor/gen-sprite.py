@@ -1,5 +1,4 @@
-#!/usr/bin/env python2
-from __future__ import unicode_literals
+#!/usr/bin/env python3
 
 import os
 from PIL import Image
@@ -54,12 +53,12 @@ for group in xml:
                         point = "0" * (8 - len(point)) + point
                     finalCodePoints.append(point)
             char = '\\U' + '\\U'.join(finalCodePoints)
-            output.write(char.decode('unicode_escape') + '\n')
+            output.write(char + '\n')
     images = [Image.open(filename) for filename in emojis]
     output.close()
 
     if len(images) > 0:
-        print "Generating sprite for " + groupName
+        print("Generating sprite for " + groupName)
         masterWidth = (128 * int(args.size))
         lines = float(len(images)) / float(args.size)
         if not lines.is_integer():
@@ -84,4 +83,4 @@ for group in xml:
         master = master.resize((int(args.resize), newHeight))
         master.save(groupName + '.png', 'PNG')
     else:
-        print 'Ignoring ' + groupName + '...'
+        print('Ignoring ' + groupName + '...')

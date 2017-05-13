@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import os
-import shutil
-import argparse
-from fontTools.ttLib import TTFont
-import xml.etree.ElementTree as ElementTree
 import binascii
-import glob
+import argparse
+import shutil
+from pathlib import Path
+import xml.etree.ElementTree as ElementTree
+
+from fontTools.ttLib import TTFont
+
 
 parser = argparse.ArgumentParser(
     prog='emoji-extractor',
@@ -22,12 +23,9 @@ parser.add_argument(
     default='output/', required=False)
 args = parser.parse_args()
 
-try:
-    shutil.rmtree(args.output)
-except:
-    pass
-
-os.mkdir(args.output)
+path = Path(args.output)
+shutil.rmtree(path, ignore_errors=True)
+path.mkdir()
 
 font = TTFont(args.input)
 font.saveXML('.NotoColorEmoji.ttx')
@@ -39,71 +37,78 @@ for element in ttx.find('CBDT').find('strikedata'):
     data = element.find('rawimagedata').text.split()
     name = element.attrib['name'].lower()
     name = name.replace('uni', 'u')
-    imagePath = os.path.abspath(args.output + 'emoji_' + name + '.png')
-    print('Extracting emoji_' + name + '.png')
+    imagePath = path / 'emoji_{}.png'.format(name)
+    print('Extracting {}'.format(imagePath.name))
     emoji = open(imagePath, "wb")
     for char in data:
             hexChar = binascii.unhexlify(char)
             emoji.write(hexChar)
     emoji.close
 
-for ligatureSetXml in ttx.find('GSUB').find('LookupList').find('Lookup').find('LigatureSubst'):
+for ligatureSetXml in ttx.find('GSUB')\
+        .find('LookupList')\
+        .find('Lookup')\
+        .find('LigatureSubst'):
     ligatureSet = ligatureSetXml.attrib['glyph'].lower().replace('uni', 'u')
     if ligatureSet.startswith('u'):  # TODO: parse missing emojis
         for ligatureXml in ligatureSetXml:
-            component = ligatureXml.attrib['components']\
+            component = ligatureXml.attrib['components'].lower()\
                 .replace(',', '_')\
-                .lower()\
                 .replace('uni', 'u')
             glyph = ligatureXml.attrib['glyph']
-            print('Renaming emoji_' + glyph + '.png to emoji_' + ligatureSet + '_' + component + '.png')
+            old_name = 'emoji_{}.png'.format(glyph)
+            new_name = 'emoji_{}_{}.png'.format(ligatureSet, component)
+            print('Renaming {} to {}'.format(old_name, new_name))
             try:
-                os.rename(args.output + '/emoji_' + glyph + '.png', args.output + '/emoji_' + ligatureSet + '_' + component + '.png')
+                (path / old_name).rename(path / new_name)
             except:
-                print('!! Cannot rename emoji_' + glyph + '.png')
+                print('!! Cannot rename {}'.format(old_name))
     else:
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
         for mapElement in cmap:
             if mapElement.attrib['name'] == ligatureSet:
-                if len(mapElement.attrib['code']) > 4:
-                    code = mapElement.attrib['code'].replace('0x', '')
-                else:
-                    code = mapElement.attrib['code'].replace('0x', '00')
+                replace_s = '' if len(mapElement.attrib['code']) > 4 else '00'
+                code = mapElement.attrib['code'].replace('0x', replace_s)
+                old_name = 'emoji_{}.png'.format(ligatureSet)
                 try:
-                    os.rename(args.output + '/emoji_' + ligatureSet + '.png', args.output + '/emoji_u' + code + '.png')
+                    (path / old_name).rename(path / 'emoji_u{}.png'.format(code))
                 except:
-                    print('!! Cannot rename emoji_' + ligatureSet + '.png')
+                    print('!! Cannot rename {}'.format(old_name))
         else:
             if code == '':
-                print('Ignoring ' + ligatureSet + '...')
+                print('Ignoring {}...'.format(ligatureSet))
 
-emojis = glob.glob(args.output + './*.png')
+emojis = path.glob('*.png')
 for emoji in emojis:
-    if not emoji.startswith(args.output + './emoji_u'):
-        emoji = emoji.replace(args.output + './emoji_', '').replace('.png', '')
-        print('Fixing ' + emoji + '...')
+    if not emoji.name.startswith('emoji_u'):
+        emoji = emoji.with_name(emoji.name.replace('emoji_', '').replace('.png', ''))
+        print('Fixing {}...'.format(emoji.name))
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
         for mapElement in cmap:
             if mapElement.attrib['name'].lower() == emoji:
-                if len(mapElement.attrib['code']) > 4:
-                    code = mapElement.attrib['code'].replace('0x', '')
-                else:
-                    code = mapElement.attrib['code'].replace('0x', '00')
+                replace_s = '' if len(mapElement.attrib['code']) > 4 else '00'
+                code = mapElement.attrib['code'].replace('0x', replace_s)
+                old_name = path / 'emoji_{}.png'.format(emoji)
                 try:
-                    os.rename(args.output + '/emoji_' + emoji + '.png', args.output + '/emoji_u' + code + '.png')
+                    (path / old_name).rename(path / 'emoji_u{}.png'.format(code))
                 except:
-                    print('!! Cannot fix emoji_' + emoji + '.png')
+                    print('!! Cannot fix _{}'.format(old_name))
 
 # Some flags aren't correctly sorted
-os.rename(args.output + '/emoji_ufe4e5.png', args.output + '/emoji_u1f1ef_u1f1f5.png')
-os.rename(args.output + '/emoji_ufe4e6.png', args.output + '/emoji_u1f1fa_u1f1f8.png')
-os.rename(args.output + '/emoji_ufe4e7.png', args.output + '/emoji_u1f1eb_u1f1f7.png')
-os.rename(args.output + '/emoji_ufe4e8.png', args.output + '/emoji_u1f1e9_u1f1ea.png')
-os.rename(args.output + '/emoji_ufe4e9.png', args.output + '/emoji_u1f1ee_u1f1f9.png')
-os.rename(args.output + '/emoji_ufe4ea.png', args.output + '/emoji_u1f1ec_u1f1e7.png')
-os.rename(args.output + '/emoji_ufe4eb.png', args.output + '/emoji_u1f1ea_u1f1f8.png')
-os.rename(args.output + '/emoji_ufe4ec.png', args.output + '/emoji_u1f1f7_u1f1fa.png')
-os.rename(args.output + '/emoji_ufe4ed.png', args.output + '/emoji_u1f1e8_u1f1f3.png')
-os.rename(args.output + '/emoji_ufe4ee.png', args.output + '/emoji_u1f1f0_u1f1f7.png')
+trans_table = {
+    'fe4e5': '1f1ef_u1f1f5',
+    'fe4e6': '1f1fa_u1f1f8',
+    'fe4e7': '1f1eb_u1f1f7',
+    'fe4e8': '1f1e9_u1f1ea',
+    'fe4e9': '1f1ee_u1f1f9',
+    'fe4ea': '1f1ec_u1f1e7',
+    'fe4eb': '1f1ea_u1f1f8',
+    'fe4ec': '1f1f7_u1f1fa',
+    'fe4ed': '1f1e8_u1f1f3',
+    'fe4ee': '1f1f0_u1f1f7',
+}
+
+for old, new in trans_table.items():
+    (path / 'emoji_u{}.png'.format(old)).rename(path / 'emoji_u{}.png'.format(new))

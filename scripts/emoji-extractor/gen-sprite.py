@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import os
-from PIL import Image
 import argparse
+from pathlib import Path
 import xml.etree.ElementTree as ElementTree
-import io
+
+from PIL import Image
 
 parser = argparse.ArgumentParser(
     prog='gen-sprite',
@@ -31,18 +31,21 @@ parser.add_argument(
     required=False)
 args = parser.parse_args()
 
+emoji_path = Path(args.emojis)
+
 xml = ElementTree.parse(args.xml).getroot()
 parsedItems = []
 
 for group in xml:
     groupName = group.attrib['name']
     emojis = []
-    output = io.open(groupName + '.txt', 'w', encoding='utf8')
+    output = open('{}.txt'.format(groupName), 'w')
     for item in group:
         emoji = item.text.replace(',', '_u').lower()
-        if '|' not in emoji and os.path.isfile(args.emojis + 'emoji_u' + emoji + '.png') and emoji not in parsedItems:
+        emoji_file = emoji_path / 'emoji_u{}.png'.format(emoji)
+        if '|' not in emoji and emoji not in parsedItems and emoji_file.is_file():
             parsedItems.append(emoji)
-            emojis.append(args.emojis + 'emoji_u' + emoji + '.png')
+            emojis.append(emoji_file)
             emojiCodePoint = '\\U' + emoji.replace('_u', '\\U')
             emojiCodePoint = emojiCodePoint.split('\\U')
             finalCodePoints = []
@@ -58,12 +61,11 @@ for group in xml:
     output.close()
 
     if len(images) > 0:
-        print("Generating sprite for " + groupName)
+        print("Generating sprite for {}".format(groupName))
         masterWidth = (128 * int(args.size))
-        lines = float(len(images)) / float(args.size)
+        lines = len(images) / float(args.size)
         if not lines.is_integer():
-            lines += 1
-            lines = int(lines)
+            lines = int(lines + 1)
         masterHeight = int(128 * lines)
         master = Image.new(
             mode='RGBA',
@@ -73,14 +75,13 @@ for group in xml:
 
         offset = -1
         for count, image in enumerate(images):
-            location = 128 * count % masterWidth
+            location = (128 * count) % masterWidth
             if location == 0:
                 offset += 1
-                location = 0
             master.paste(image, (location, 128 * offset))
-        ratio = float(masterWidth) / float(args.resize)
-        newHeight = int(masterHeight / ratio)
+        ratio = masterWidth / float(args.resize)
+        newHeight = int(masterHeight // ratio)
         master = master.resize((int(args.resize), newHeight))
         master.save(groupName + '.png', 'PNG')
     else:
-        print('Ignoring ' + groupName + '...')
+        print('Ignoring {}...'.format(groupName))

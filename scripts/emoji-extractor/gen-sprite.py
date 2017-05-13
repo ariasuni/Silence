@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import math
 from pathlib import Path
 import xml.etree.ElementTree as ElementTree
 
@@ -46,10 +47,9 @@ for group in xml:
         if '|' not in emoji and emoji not in parsed_items and emoji_file.is_file():
             parsed_items.append(emoji)
             emojis.append(emoji_file)
-            emoji_code_point = '\\U' + emoji.replace('_u', '\\U')
-            emoji_code_point = emoji_code_point.split('\\U')
             final_code_points = []
-            for point in emoji_code_point:
+            emoji_code_point = '\\U' + emoji.replace('_u', '\\U')
+            for point in emoji_code_point.split('\\U'):
                 point = point.replace('\\U', '')
                 if len(point) > 0:
                     if len(point) < 8:
@@ -62,11 +62,9 @@ for group in xml:
 
     if len(images) > 0:
         print("Generating sprite for {}".format(group_name))
-        master_width = (128 * int(args.size))
-        lines = len(images) / float(args.size)
-        if not lines.is_integer():
-            lines = int(lines + 1)
-        master_height = int(128 * lines)
+        master_width = 128 * int(args.size)
+        lines = math.ceil(len(images) / float(args.size))
+        master_height = 128 * int(lines)
         master = Image.new(
             mode='RGBA',
             size=(master_width, master_height),
@@ -79,9 +77,9 @@ for group in xml:
             if location == 0:
                 offset += 1
             master.paste(image, (location, 128 * offset))
-        ratio = master_width / float(args.resize)
-        new_height = int(master_height // ratio)
-        master = master.resize((int(args.resize), new_height))
+        ratio = float(master_width) / float(args.resize)
+        new_height = math.ceil(master_height / ratio)
+        master = master.resize((int(args.resize), int(new_height)))
         master.save(group_name + '.png', 'PNG')
     else:
         print('Ignoring {}...'.format(group_name))

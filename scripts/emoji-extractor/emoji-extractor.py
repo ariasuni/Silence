@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import binascii
 import argparse
+import binascii
+import io
 import shutil
 from pathlib import Path
 import xml.etree.ElementTree as ElementTree
@@ -27,11 +28,9 @@ path = Path(args.output)
 shutil.rmtree(path, ignore_errors=True)
 path.mkdir()
 
-font = TTFont(args.input)
-font.saveXML('.NotoColorEmoji.ttx')
-
-ttx = ElementTree.parse('.NotoColorEmoji.ttx').getroot()
-os.remove('.NotoColorEmoji.ttx')
+font_xml = io.StringIO()
+TTFont(args.input).saveXML(font_xml)
+ttx = ElementTree.fromstring(font_xml.getvalue())
 
 for element in ttx.find('CBDT').find('strikedata'):
     data = element.find('rawimagedata').text.split()

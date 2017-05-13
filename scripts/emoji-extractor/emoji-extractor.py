@@ -9,7 +9,6 @@ import xml.etree.ElementTree as ElementTree
 
 from fontTools.ttLib import TTFont
 
-
 parser = argparse.ArgumentParser(
     prog='emoji-extractor',
     description="""Extract emojis from NotoColorEmoji.ttf. Requires FontTools.""")
@@ -36,27 +35,27 @@ for element in ttx.find('CBDT').find('strikedata'):
     data = element.find('rawimagedata').text.split()
     name = element.attrib['name'].lower()
     name = name.replace('uni', 'u')
-    imagePath = path / 'emoji_{}.png'.format(name)
-    print('Extracting {}'.format(imagePath.name))
-    emoji = open(imagePath, "wb")
+    image_path = path / 'emoji_{}.png'.format(name)
+    print('Extracting {}'.format(image_path.name))
+    emoji = open(image_path, "wb")
     for char in data:
             hexChar = binascii.unhexlify(char)
             emoji.write(hexChar)
     emoji.close
 
-for ligatureSetXml in ttx.find('GSUB')\
+for ligature_set_xml in ttx.find('GSUB')\
         .find('LookupList')\
         .find('Lookup')\
         .find('LigatureSubst'):
-    ligatureSet = ligatureSetXml.attrib['glyph'].lower().replace('uni', 'u')
-    if ligatureSet.startswith('u'):  # TODO: parse missing emojis
-        for ligatureXml in ligatureSetXml:
-            component = ligatureXml.attrib['components'].lower()\
+    ligature_set = ligature_set_xml.attrib['glyph'].lower().replace('uni', 'u')
+    if ligature_set.startswith('u'):  # TODO: parse missing emojis
+        for ligature_xml in ligature_set_xml:
+            component = ligature_xml.attrib['components'].lower()\
                 .replace(',', '_')\
                 .replace('uni', 'u')
-            glyph = ligatureXml.attrib['glyph']
+            glyph = ligature_xml.attrib['glyph']
             old_name = 'emoji_{}.png'.format(glyph)
-            new_name = 'emoji_{}_{}.png'.format(ligatureSet, component)
+            new_name = 'emoji_{}_{}.png'.format(ligature_set, component)
             print('Renaming {} to {}'.format(old_name, new_name))
             try:
                 (path / old_name).rename(path / new_name)
@@ -65,18 +64,18 @@ for ligatureSetXml in ttx.find('GSUB')\
     else:
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
-        for mapElement in cmap:
-            if mapElement.attrib['name'] == ligatureSet:
-                replace_s = '' if len(mapElement.attrib['code']) > 4 else '00'
-                code = mapElement.attrib['code'].replace('0x', replace_s)
-                old_name = 'emoji_{}.png'.format(ligatureSet)
+        for map_element in cmap:
+            if map_element.attrib['name'] == ligature_set:
+                replace_s = '' if len(map_element.attrib['code']) > 4 else '00'
+                code = map_element.attrib['code'].replace('0x', replace_s)
+                old_name = 'emoji_{}.png'.format(ligature_set)
                 try:
                     (path / old_name).rename(path / 'emoji_u{}.png'.format(code))
                 except:
                     print('!! Cannot rename {}'.format(old_name))
         else:
             if code == '':
-                print('Ignoring {}...'.format(ligatureSet))
+                print('Ignoring {}...'.format(ligature_set))
 
 emojis = path.glob('*.png')
 for emoji in emojis:
@@ -85,10 +84,10 @@ for emoji in emojis:
         print('Fixing {}...'.format(emoji.name))
         cmap = ttx.find('cmap').find('cmap_format_12')
         code = ''
-        for mapElement in cmap:
-            if mapElement.attrib['name'].lower() == emoji:
-                replace_s = '' if len(mapElement.attrib['code']) > 4 else '00'
-                code = mapElement.attrib['code'].replace('0x', replace_s)
+        for map_element in cmap:
+            if map_element.attrib['name'].lower() == emoji:
+                replace_s = '' if len(map_element.attrib['code']) > 4 else '00'
+                code = map_element.attrib['code'].replace('0x', replace_s)
                 old_name = path / 'emoji_{}.png'.format(emoji)
                 try:
                     (path / old_name).rename(path / 'emoji_u{}.png'.format(code))

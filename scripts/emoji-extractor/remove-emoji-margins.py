@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
-
 from pathlib import Path
+
 from PIL import Image
 
 parser = argparse.ArgumentParser(

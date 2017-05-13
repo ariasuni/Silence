@@ -34,54 +34,54 @@ args = parser.parse_args()
 emoji_path = Path(args.emojis)
 
 xml = ElementTree.parse(args.xml).getroot()
-parsedItems = []
+parsed_items = []
 
 for group in xml:
-    groupName = group.attrib['name']
+    group_name = group.attrib['name']
     emojis = []
-    output = open('{}.txt'.format(groupName), 'w')
+    output = open('{}.txt'.format(group_name), 'w')
     for item in group:
         emoji = item.text.replace(',', '_u').lower()
         emoji_file = emoji_path / 'emoji_u{}.png'.format(emoji)
-        if '|' not in emoji and emoji not in parsedItems and emoji_file.is_file():
-            parsedItems.append(emoji)
+        if '|' not in emoji and emoji not in parsed_items and emoji_file.is_file():
+            parsed_items.append(emoji)
             emojis.append(emoji_file)
-            emojiCodePoint = '\\U' + emoji.replace('_u', '\\U')
-            emojiCodePoint = emojiCodePoint.split('\\U')
-            finalCodePoints = []
-            for point in emojiCodePoint:
+            emoji_code_point = '\\U' + emoji.replace('_u', '\\U')
+            emoji_code_point = emoji_code_point.split('\\U')
+            final_code_points = []
+            for point in emoji_code_point:
                 point = point.replace('\\U', '')
                 if len(point) > 0:
                     if len(point) < 8:
                         point = "0" * (8 - len(point)) + point
-                    finalCodePoints.append(point)
-            char = '\\U' + '\\U'.join(finalCodePoints)
+                    final_code_points.append(point)
+            char = '\\U' + '\\U'.join(final_code_points)
             output.write(char + '\n')
     images = [Image.open(filename) for filename in emojis]
     output.close()
 
     if len(images) > 0:
-        print("Generating sprite for {}".format(groupName))
-        masterWidth = (128 * int(args.size))
+        print("Generating sprite for {}".format(group_name))
+        master_width = (128 * int(args.size))
         lines = len(images) / float(args.size)
         if not lines.is_integer():
             lines = int(lines + 1)
-        masterHeight = int(128 * lines)
+        master_height = int(128 * lines)
         master = Image.new(
             mode='RGBA',
-            size=(masterWidth, masterHeight),
+            size=(master_width, master_height),
             color=(0, 0, 0, 0)
         )
 
         offset = -1
         for count, image in enumerate(images):
-            location = (128 * count) % masterWidth
+            location = (128 * count) % master_width
             if location == 0:
                 offset += 1
             master.paste(image, (location, 128 * offset))
-        ratio = masterWidth / float(args.resize)
-        newHeight = int(masterHeight // ratio)
-        master = master.resize((int(args.resize), newHeight))
-        master.save(groupName + '.png', 'PNG')
+        ratio = master_width / float(args.resize)
+        new_height = int(master_height // ratio)
+        master = master.resize((int(args.resize), new_height))
+        master.save(group_name + '.png', 'PNG')
     else:
-        print('Ignoring {}...'.format(groupName))
+        print('Ignoring {}...'.format(group_name))

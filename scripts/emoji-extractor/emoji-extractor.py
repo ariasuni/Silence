@@ -31,6 +31,7 @@ font_xml = io.StringIO()
 TTFont(args.input).saveXML(font_xml)
 ttx = ElementTree.fromstring(font_xml.getvalue())
 
+
 def mass_rename(ligature_set_or_emoji):
     cmap = ttx.find('cmap').find('cmap_format_12')
     code = ''
@@ -41,12 +42,14 @@ def mass_rename(ligature_set_or_emoji):
             rename('emoji_{}.png'.format(ligature_set_or_emoji),
                    'emoji_u{}.png'.format(code))
 
+
 def rename(old_name, new_name):
     print('Renaming {} to {}'.format(old_name, new_name))
     try:
         (path / old_name).rename(path / new_name)
     except:
         print('!! Cannot rename {}'.format(old_name))
+
 
 for element in ttx.find('CBDT').find('strikedata'):
     data = element.find('rawimagedata').text.split()
